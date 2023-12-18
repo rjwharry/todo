@@ -1,5 +1,5 @@
 {
-  "name": "todo",
+  "name": "dnd",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -10,9 +10,14 @@
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
+    "@types/styled-components": "^5.1.34",
     "react": "^18.2.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.49.0",
     "react-scripts": "5.0.1",
+    "recoil": "^0.7.7",
+    "styled-components": "^6.1.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4"
   },
@@ -20,7 +25,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint ‘./src/**/*.{ts,tsx}’",
+    "lint:fix": "eslint —fix ‘./src/**/*.{ts,tsx}’"
   },
   "eslintConfig": {
     "extends": [
@@ -39,5 +46,16 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/react-beautiful-dnd": "^13.1.7",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-hooks": "^0.4.3",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.0"
   }
 }
