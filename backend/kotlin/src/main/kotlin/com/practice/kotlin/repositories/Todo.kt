@@ -13,6 +13,10 @@ enum class STATUS {
 class Todo(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long,
+    @Column(nullable = true)
+    var prev: Long?,
+    @Column(nullable = true)
+    var next: Long?,
     @Column(unique = true, nullable = false)
     var name: String,
     @Column(nullable = true)
@@ -21,6 +25,5 @@ class Todo(
     @Column(nullable = false)
     var status: STATUS = STATUS.TODO,
     @Column(nullable = false)
-//    @CreationTimestamp
     var createdAt: LocalDateTime = LocalDateTime.now(),
 )
