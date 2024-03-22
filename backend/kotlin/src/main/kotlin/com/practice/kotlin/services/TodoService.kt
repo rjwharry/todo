@@ -33,6 +33,9 @@ class TodoService(private val todoRepository: TodoRepository) {
 	fun updateTodo(id: Long, body: TodoDto): Todo {
 		val todo = deleteFromLinkedList(id)
 		val updatedTodo = insertToLinkedList(todo, body.prev, body.next)
+		updatedTodo.name = body.todo.name
+		updatedTodo.contents = body.todo.contents
+		updatedTodo.status = body.todo.status
 		return todoRepository.save(updatedTodo)
 	}
 
