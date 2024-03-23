@@ -1,6 +1,6 @@
 import { Draggable } from "react-beautiful-dnd";
-import { ITodo } from "../atom/todo";
 import styled from "styled-components";
+import { ITodo } from "../api/todo";
 
 interface IDraggableCardProps {
   todo: ITodo;
@@ -23,8 +23,6 @@ const Title = styled.h4`
   font-size: 18px;
 `;
 
-const Contents = styled.p``;
-
 function DraggableCard({ todo, idx }: IDraggableCardProps) {
   return (
     <>
@@ -37,7 +35,7 @@ function DraggableCard({ todo, idx }: IDraggableCardProps) {
             {...provided.draggableProps}
           >
             <Title>{todo.name}</Title>
-            <Contents>{todo.contents}</Contents>
+            {/* <Contents>{todo.contents}</Contents> */}
           </Card>
         )}
       </Draggable>

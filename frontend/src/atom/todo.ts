@@ -1,4 +1,5 @@
 import { atom, selectorFamily } from "recoil";
+import { ITodo } from "../api/todo";
 
 export const status = {
   TODO: "TODO",
@@ -8,57 +9,67 @@ export const status = {
 
 export type Status = (typeof status)[keyof typeof status];
 
-export interface ITodo {
-  id: number;
-  name: string;
-  contents: string;
-  status: Status;
-  createdAt: Date;
+export interface ITodoState {
+  [key: string]: ITodo[];
 }
 
-export const todoState = atom<ITodo[]>({
+export interface ITodoSelectorParams {
+  type: Status;
+  id: number;
+}
+
+export const todoState = atom<ITodoState>({
   key: "todo",
-  default: [
-    {
-      id: 1,
-      name: "test",
-      contents: "This is test todo",
-      status: "TODO",
-      createdAt: new Date(),
-    },
-    {
-      id: 2,
-      name: "test2",
-      contents: "This is test2 todo",
-      status: "TODO",
-      createdAt: new Date(),
-    },
-    {
-      id: 3,
-      name: "test3",
-      contents: "This is test3 todo",
-      status: "DOING",
-      createdAt: new Date(),
-    },
-    {
-      id: 4,
-      name: "test4",
-      contents: "This is test4 todo",
-      status: "DONE",
-      createdAt: new Date(),
-    },
-  ],
+  default: {
+    TODO: [],
+    DOING: [],
+    DONE: [],
+    // TODO: [
+    //   {
+    //     id: 1,
+    //     name: "test",
+    //     contents: "This is test todo",
+    //     status: "TODO",
+    //     createdAt: new Date(),
+    //   },
+    //   {
+    //     id: 2,
+    //     name: "test2",
+    //     contents: "This is test2 todo",
+    //     status: "TODO",
+    //     createdAt: new Date(),
+    //   },
+    // ],
+    // DOING: [
+    //   {
+    //     id: 3,
+    //     name: "test3",
+    //     contents: "This is test3 todo",
+    //     status: "DOING",
+    //     createdAt: new Date(),
+    //   },
+    // ],
+    // DONE: [
+    //   {
+    //     id: 4,
+    //     name: "test4",
+    //     contents: "This is test4 todo",
+    //     status: "DONE",
+    //     createdAt: new Date(),
+    //   },
+    // ],
+  },
 });
 
-export const todoSelector = selectorFamily({
-  key: "todoSelector",
-  get:
-    (params: number) =>
-    ({ get }) => {
-      const todos = get(todoState);
-      return todos.filter((todo) => todo.id === params);
-    },
-});
+// export const todoSelector = selectorFamily({
+//   key: "todoSelector",
+//   get:
+//     (params: ITodoSelectorParams) =>
+//     ({ get }) => {
+//       const todos = get(todoState);
+//       return todos[params.type].find((todo) => todo.id === params.id);
+//     },
+// });
 
 export const todoStatusSelector = selectorFamily({
   key: "todoStatusSelector",
@@ -66,10 +77,18 @@ export const todoStatusSelector = selectorFamily({
     (params: Status) =>
     ({ get }) => {
       const todos = get(todoState);
-      return filterTodoWithStatus(todos, params);
+      return todos[params];
     },
 });
 
-const filterTodoWithStatus = (todos: ITodo[], status: Status): ITodo[] => {
-  return todos.filter((todo) => todo.status === status);
-};
+export const todoSelector = selectorFamily({
+  key: "todoSelector",
+  get:
+    (id: number) =>
+    ({ get }) => {
+      const todos = get(todoState);
+      return Object.values(todos)
+        .reduce((a, b) => [...a, ...b])
+        .find((todo) => todo.id === id);
+    },
+});
