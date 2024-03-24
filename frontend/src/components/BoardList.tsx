@@ -1,8 +1,8 @@
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import styled from "styled-components";
-import { ITodoState, Status, status, todoState } from "../atom/todo";
+import { ITodoState, Status, status, todoState, traverse } from "../atom/todo";
 import Board from "./Board";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ITodo, getTodos, updateTodo } from "../api/todo";
 import { useEffect } from "react";
@@ -35,16 +35,6 @@ function BoardList() {
     queryFn: getTodos,
   });
 
-  const getTodo = (id: number): ITodo | undefined => {
-    return Object.values(todos)
-      .reduce((a, b) => [...a, ...b])
-      .find((todo) => todo.id === id);
-  };
-
-  const getTodoByStatusAndIdx = (idx: number, status: Status): ITodo => {
-    return todos[status][idx];
-  };
-
   const mutation = useMutation({
     mutationFn: updateTodo,
     onSuccess: () => {
@@ -53,45 +43,38 @@ function BoardList() {
   });
 
   const onDragEnd = (info: DropResult) => {
-    const { draggableId, source, destination } = info;
-    console.log(draggableId, source, destination);
-    const todo = getTodo(+draggableId);
-    if (!todo || !destination) return;
-    const originTodo = getTodoByStatusAndIdx(
-      destination.index,
-      destination.droppableId as Status
-    );
-    const payload = {
-      todo: todo,
-      prev: originTodo?.id,
-      next: originTodo?.next,
+    const { source, destination } = info;
+    if (!destination) return;
+    const sourceTodos = [...todos[source.droppableId]];
+    const targetTodos =
+      source.droppableId === destination.droppableId
+        ? sourceTodos
+        : [...todos[destination.droppableId]];
+    const todo = {
+      ...sourceTodos[source.index],
+      status: destination.droppableId as Status,
     };
-    console.log(payload);
-    mutation.mutate(payload);
-    // if (!destination) return;
-    // setTodos((todos) => {
-    //   const sourceTodos = [...todos[source.droppableId]];
-    //   const targetTodos = [...todos[destination.droppableId]];
-    //   const todo = {
-    //     ...sourceTodos[source.index],
-    //     status: destination.droppableId as Status,
-    //   };
-    //   sourceTodos.splice(source.index, 1);
-    //   targetTodos.splice(destination.index, 0, todo);
-    //   return {
-    //     ...todos,
-    //     [source.droppableId]: sourceTodos,
-    //     [destination.droppableId]: targetTodos,
-    //   };
-    // });
+    sourceTodos.splice(source.index, 1);
+    targetTodos.splice(destination.index, 0, todo);
+    const newTodos = {
+      ...todos,
+      [source.droppableId]: sourceTodos,
+      [destination.droppableId]: targetTodos,
+    };
+    mutation.mutate({
+      todo: todo,
+      prev: targetTodos[destination.index - 1]?.id,
+      next: targetTodos[destination.index + 1]?.id,
+    });
+    setTodos(newTodos);
   };
 
   useEffect(() => {
     if (data && !isLoading) {
       const newTodos: ITodoState = {
-        TODO: data?.filter((todo) => todo.status === "TODO") ?? [],
-        DOING: data?.filter((todo) => todo.status === "DOING") ?? [],
-        DONE: data?.filter((todo) => todo.status === "DONE") ?? [],
+        TODO: traverse(data?.filter((todo) => todo.status === "TODO")) ?? [],
+        DOING: traverse(data?.filter((todo) => todo.status === "DOING")) ?? [],
+        DONE: traverse(data?.filter((todo) => todo.status === "DONE")) ?? [],
       };
       setTodos(newTodos);
     }

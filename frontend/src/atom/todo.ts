@@ -24,52 +24,25 @@ export const todoState = atom<ITodoState>({
     TODO: [],
     DOING: [],
     DONE: [],
-    // TODO: [
-    //   {
-    //     id: 1,
-    //     name: "test",
-    //     contents: "This is test todo",
-    //     status: "TODO",
-    //     createdAt: new Date(),
-    //   },
-    //   {
-    //     id: 2,
-    //     name: "test2",
-    //     contents: "This is test2 todo",
-    //     status: "TODO",
-    //     createdAt: new Date(),
-    //   },
-    // ],
-    // DOING: [
-    //   {
-    //     id: 3,
-    //     name: "test3",
-    //     contents: "This is test3 todo",
-    //     status: "DOING",
-    //     createdAt: new Date(),
-    //   },
-    // ],
-    // DONE: [
-    //   {
-    //     id: 4,
-    //     name: "test4",
-    //     contents: "This is test4 todo",
-    //     status: "DONE",
-    //     createdAt: new Date(),
-    //   },
-    // ],
   },
 });
 
-// export const todoSelector = selectorFamily({
-//   key: "todoSelector",
-//   get:
-//     (params: ITodoSelectorParams) =>
-//     ({ get }) => {
-//       const todos = get(todoState);
-//       return todos[params.type].find((todo) => todo.id === params.id);
-//     },
-// });
+const findById = (todos: ITodo[], id: number): ITodo | undefined => {
+  return todos.find((todo) => todo.id === id);
+};
+
+export const traverse = (todos: ITodo[]): ITodo[] => {
+  const linkedTodos: ITodo[] = [];
+  let fisrtTodo = todos.find((todo) => todo.prev === null);
+  if (fisrtTodo === undefined) return [];
+  linkedTodos.push(fisrtTodo);
+  let nextTodo = fisrtTodo.next ? findById(todos, fisrtTodo.next) : undefined;
+  while (nextTodo !== undefined) {
+    linkedTodos.push(nextTodo);
+    nextTodo = nextTodo.next ? findById(todos, nextTodo.next) : undefined;
+  }
+  return linkedTodos;
+};
 
 export const todoStatusSelector = selectorFamily({
   key: "todoStatusSelector",
