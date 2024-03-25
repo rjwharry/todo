@@ -1,8 +1,11 @@
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import styled from "styled-components";
-import { ITodo, Status, status, todoState } from "../atom/todo";
+import { ITodoState, Status, status, todoState, traverse } from "../atom/todo";
 import Board from "./Board";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ITodo, getTodos, updateTodo } from "../api/todo";
+import { useEffect } from "react";
 
 const Wrapper = styled.div`
   display: flex;
@@ -25,31 +28,57 @@ const Boards = styled.div`
 `;
 
 function BoardList() {
-  const setTodos = useSetRecoilState(todoState);
+  const queryClient = useQueryClient();
+  const [todos, setTodos] = useRecoilState(todoState);
+  const { data, isLoading } = useQuery<ITodo[]>({
+    queryKey: ["todos", "all"],
+    queryFn: getTodos,
+  });
+
+  const mutation = useMutation({
+    mutationFn: updateTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos", "all"] });
+    },
+  });
+
   const onDragEnd = (info: DropResult) => {
-    setTodos((old) => {
-      const { draggableId, destination } = info;
-      const idx = old.findIndex((todo) => todo.id === +draggableId);
-      const newTodo = {
-        ...old[idx],
-        status: destination?.droppableId as Status,
-      };
-      const newTodos = replaceItemAtIndex(old, idx, newTodo);
-      return newTodos;
+    const { source, destination } = info;
+    if (!destination) return;
+    const sourceTodos = [...todos[source.droppableId]];
+    const targetTodos =
+      source.droppableId === destination.droppableId
+        ? sourceTodos
+        : [...todos[destination.droppableId]];
+    const todo = {
+      ...sourceTodos[source.index],
+      status: destination.droppableId as Status,
+    };
+    sourceTodos.splice(source.index, 1);
+    targetTodos.splice(destination.index, 0, todo);
+    const newTodos = {
+      ...todos,
+      [source.droppableId]: sourceTodos,
+      [destination.droppableId]: targetTodos,
+    };
+    mutation.mutate({
+      todo: todo,
+      prev: targetTodos[destination.index - 1]?.id,
+      next: targetTodos[destination.index + 1]?.id,
     });
+    setTodos(newTodos);
   };
 
-  const replaceItemAtIndex = (
-    todos: ITodo[],
-    index: number,
-    newTodo: ITodo
-  ) => {
-    return [...todos.slice(0, index), newTodo, ...todos.slice(index + 1)];
-  };
-
-  const removeItemAtIndex = (todos: ITodo[], index: number) => {
-    return [...todos.slice(0, index), ...todos.slice(index + 1)];
-  };
+  useEffect(() => {
+    if (data && !isLoading) {
+      const newTodos: ITodoState = {
+        TODO: traverse(data?.filter((todo) => todo.status === "TODO")) ?? [],
+        DOING: traverse(data?.filter((todo) => todo.status === "DOING")) ?? [],
+        DONE: traverse(data?.filter((todo) => todo.status === "DONE")) ?? [],
+      };
+      setTodos(newTodos);
+    }
+  }, [data, isLoading]);
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
