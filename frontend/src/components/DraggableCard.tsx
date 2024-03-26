@@ -82,6 +82,7 @@ function DraggableCard({ todo, idx }: IDraggableCardProps) {
     },
   });
   const deleteCard = () => {
+    if (!!!todo.id) return;
     mutation.mutate(todo.id);
     const targetTodos = [...todos[todo.status]];
     targetTodos.splice(idx, 1);

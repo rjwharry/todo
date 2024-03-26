@@ -1,4 +1,4 @@
-import { atom, selectorFamily } from "recoil";
+import { DefaultValue, atom, selectorFamily } from "recoil";
 import { ITodo } from "../api/todo";
 
 export const status = {
@@ -47,10 +47,24 @@ export const traverse = (todos: ITodo[]): ITodo[] => {
 export const todoStatusSelector = selectorFamily({
   key: "todoStatusSelector",
   get:
-    (params: Status) =>
+    (status: Status) =>
     ({ get }) => {
       const todos = get(todoState);
-      return todos[params];
+      return todos[status];
+    },
+  set:
+    (status: Status) =>
+    ({ set, reset }, newTodos) => {
+      if (newTodos instanceof DefaultValue) {
+        reset(todoState);
+      } else {
+        set(todoState, (prevTodos) => {
+          return {
+            ...prevTodos,
+            [status]: newTodos,
+          };
+        });
+      }
     },
 });
 
