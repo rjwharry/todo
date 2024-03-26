@@ -3,19 +3,19 @@ import { Status } from "../atom/todo";
 import { BASE_PATH } from "./constants";
 
 export interface ITodo {
-  id: number;
+  id: number | null;
   name: string;
-  contents: string | undefined;
+  contents: string | null;
   status: Status;
-  prev: number | undefined;
-  next: number | undefined;
-  createdAt: Date;
+  prev: number | null;
+  next: number | null;
+  createdAt: Date | null;
 }
 
 export interface IUpdateTodo {
   todo: ITodo;
-  prev: number | undefined;
-  next: number | undefined;
+  prev: number | null;
+  next: number | null;
 }
 
 const TODO_BASE_PATH = `${BASE_PATH}/todos`;
