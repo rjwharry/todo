@@ -24,7 +24,6 @@ export function getTodos() {
   return axios
     .get(TODO_BASE_PATH)
     .then((res) => {
-      console.log(res.data);
       return res.data;
     })
     .catch((err) => console.log(err));
