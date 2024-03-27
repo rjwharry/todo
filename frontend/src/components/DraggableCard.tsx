@@ -1,14 +1,19 @@
 import { Draggable } from "react-beautiful-dnd";
 import styled from "styled-components";
-import { ITodo, deleteTodo } from "../api/todo";
+import { ITodo, IUpdateTodo, deleteTodo, updateTodo } from "../api/todo";
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRecoilState } from "recoil";
 import { todoState } from "../atom/todo";
+import { useForm } from "react-hook-form";
 
 interface IDraggableCardProps {
   todo: ITodo;
   idx: number;
+}
+interface IForm {
+  name: string;
+  contents: string;
 }
 
 const Overlay = styled.div`
@@ -37,31 +42,25 @@ const CardHeader = styled.div`
 `;
 
 const Title = styled.h4`
-  /* text-align: start; */
   font-weight: 600;
   font-size: 18px;
 `;
 
-const DeleteButton = styled.button`
+const Contents = styled.p``;
+
+const Button = styled.button`
   cursor: pointer;
   svg {
     width: 10px;
   }
 `;
 
-const CancleButton = styled.button`
-  cursor: pointer;
-  background-color: rgba(52, 152, 219, 1);
-`;
-
-const DeleteModal = styled.div`
+const Modal = styled.div`
   position: absolute;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
   align-items: center;
-  width: 250px;
-  height: 150px;
   margin: 0 auto;
   padding: 30px;
   left: 0;
@@ -71,19 +70,49 @@ const DeleteModal = styled.div`
   background-color: white;
 `;
 
+const Form = styled.form``;
+
+const NameInput = styled.input``;
+
+const ContentsInput = styled.textarea``;
+
+const ModalContents = styled.div`
+  display: grid;
+  width: 200px;
+  grid-template-rows: 1fr 2fr;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: space-evenly;
+`;
+
 function DraggableCard({ todo, idx }: IDraggableCardProps) {
   const queryClient = useQueryClient();
   const [todos, setTodos] = useRecoilState(todoState);
   const [cardDelete, setCardDelete] = useState(false);
-  const mutation = useMutation({
+  const [cardUpdate, setCardUpdate] = useState(false);
+  const { register, handleSubmit, setValue } = useForm<IForm>({
+    defaultValues: {
+      name: todo.name,
+      contents: todo.contents ?? "",
+    },
+  });
+  const deleteMutation = useMutation({
     mutationFn: deleteTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["todos", "all"] });
+    },
+  });
+  const updateMutation = useMutation({
+    mutationFn: updateTodo,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["todos", "all"] });
     },
   });
   const deleteCard = () => {
     if (!!!todo.id) return;
-    mutation.mutate(todo.id);
+    deleteMutation.mutate(todo.id);
     const targetTodos = [...todos[todo.status]];
     targetTodos.splice(idx, 1);
     setTodos((oldTodos) => {
@@ -94,28 +123,86 @@ function DraggableCard({ todo, idx }: IDraggableCardProps) {
     });
     setCardDelete(false);
   };
+
+  const updateCard = (data: IForm) => {
+    console.log(data);
+    const updateTodo = { ...todo };
+    updateTodo.name = data.name;
+    updateTodo.contents = data.contents;
+    const todoDto: IUpdateTodo = {
+      todo: updateTodo,
+      prev: -1,
+      next: -1,
+    };
+    updateMutation.mutate(todoDto);
+    setCardUpdate(false);
+  };
   return (
     <>
       {cardDelete && (
         <>
           <Overlay onClick={() => setCardDelete(false)} />
-          <DeleteModal>
+          <Modal
+            style={{
+              width: "250px",
+              height: "150px",
+            }}
+          >
             <Title>정말로 {todo.name}을(를) 삭제하시겠습니까?</Title>
-            <DeleteButton
+            <Button
               onClick={deleteCard}
               style={{ backgroundColor: "rgba(231, 76, 60,1.0)" }}
             >
               DELETE
-            </DeleteButton>
-            <CancleButton onClick={() => setCardDelete(false)}>
+            </Button>
+            <Button
+              onClick={() => setCardDelete(false)}
+              style={{ backgroundColor: "rgba(52, 152, 219, 1)" }}
+            >
               CANCEL
-            </CancleButton>
-          </DeleteModal>
+            </Button>
+          </Modal>
+        </>
+      )}
+      {cardUpdate && (
+        <>
+          <Overlay onClick={() => setCardUpdate(false)} />
+          <Modal
+            style={{
+              display: "grid",
+              gridTemplateRows: "2fr 1fr",
+              width: "500px",
+              height: "250px",
+            }}
+          >
+            <Form onSubmit={handleSubmit(updateCard)}>
+              <ModalContents>
+                <NameInput
+                  {...register("name", { minLength: 1 })}
+                  placeholder={todo.name}
+                />
+                <ContentsInput
+                  {...register("contents")}
+                  placeholder={todo.contents ?? ""}
+                />
+              </ModalContents>
+              <ButtonGroup>
+                <Button type="submit">UPDATE</Button>
+                <Button
+                  onClick={() => setCardUpdate(false)}
+                  style={{ backgroundColor: "rgba(52, 152, 219, 1)" }}
+                >
+                  CANCEL
+                </Button>
+              </ButtonGroup>
+            </Form>
+          </Modal>
         </>
       )}
       <Draggable key={todo.id} draggableId={todo.id + ""} index={idx}>
         {(provided, snapshot) => (
           <Card
+            onClick={() => setCardUpdate(true)}
             isDragging={snapshot.isDragging}
             ref={provided.innerRef}
             {...provided.dragHandleProps}
@@ -124,7 +211,7 @@ function DraggableCard({ todo, idx }: IDraggableCardProps) {
             <CardHeader>
               <Title>{todo.name}</Title>
               {/* <Contents>{todo.contents}</Contents> */}
-              <DeleteButton
+              <Button
                 onClick={() => setCardDelete(true)}
                 style={{ border: 0, background: "none" }}
               >
@@ -143,7 +230,7 @@ function DraggableCard({ todo, idx }: IDraggableCardProps) {
                     d="M6 18 18 6M6 6l12 12"
                   ></path>
                 </svg>
-              </DeleteButton>
+              </Button>
             </CardHeader>
           </Card>
         )}
