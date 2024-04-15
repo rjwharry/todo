@@ -71,14 +71,16 @@ function BoardList() {
 
   useEffect(() => {
     if (data && !isLoading) {
-      const newTodos: ITodoState = {
-        TODO: traverse(data?.filter((todo) => todo.status === "TODO")) ?? [],
-        DOING: traverse(data?.filter((todo) => todo.status === "DOING")) ?? [],
-        DONE: traverse(data?.filter((todo) => todo.status === "DONE")) ?? [],
-      };
-      setTodos(newTodos);
+      setTodos((prev) => {
+        return {
+          ...prev,
+          TODO: traverse(data?.filter((todo) => todo.status === "TODO")) ?? [],
+          DOING:
+            traverse(data?.filter((todo) => todo.status === "DOING")) ?? [],
+          DONE: traverse(data?.filter((todo) => todo.status === "DONE")) ?? [],
+        };
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, isLoading]);
 
   return (
