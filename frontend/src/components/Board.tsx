@@ -80,7 +80,6 @@ function Board({ boardType }: IBoardProps) {
       status: boardType,
       createdAt: new Date(),
     };
-    console.log(newTodo);
     setTodos((prevTodo) => {
       return [...prevTodo, newTodo];
     });
